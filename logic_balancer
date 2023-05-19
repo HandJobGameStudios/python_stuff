@@ -1,0 +1,82 @@
+import tkinter as tk
+from tkinter import scrolledtext, messagebox
+
+colors = [
+    "#e6194b", "#3cb44b", "#ffe119", "#4363d8", "#f58231", "#911eb4", "#46f0f0", 
+    "#f032e6", "#bcf60c", "#fabebe", "#008080", "#e6beff", "#9a6324", "#fffac8", 
+    "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000075", "#808080", "#ffffff", "#000000"
+]
+
+def check_balanced(expression):
+    stack = []
+    brackets = {"(": ")", "[": "]", "{": "}"}
+    left_count = {"(": 0, "[": 0, "{": 0}
+    right_count = {")": 0, "]": 0, "}": 0}
+
+    for i, bracket in enumerate(expression, start=1):
+        if bracket in brackets:
+            stack.append(bracket)
+            left_count[bracket] += 1
+        elif bracket in brackets.values():
+            right_count[bracket] += 1
+            if not stack or brackets.get(stack.pop(), None) != bracket:
+                return False, f"Mismatched bracket at character {i}. Total left brackets: {left_count}, total right brackets: {right_count}."
+    if stack:
+        return False, f"Unbalanced brackets. Total left brackets: {left_count}, total right brackets: {right_count}."
+
+    return True, ""
+
+def color_parentheses():
+    color_stack = []
+
+    formula = formula_entry.get("1.0", tk.END).strip()
+
+    balanced, message = check_balanced(formula)
+    if not balanced:
+        messagebox.showwarning("Warning", message)
+
+    for char in formula:
+        if char in '([{':
+            color_stack.append(colors[len(color_stack) % len(colors)])  # Wrap around if we run out of colors
+            colored_formula.insert(tk.END, char, color_stack[-1])
+        elif char in ')]}':
+            if color_stack:
+                colored_formula.insert(tk.END, char, color_stack[-1])
+                color_stack.pop()  # Remove the last color from stack when closing a parenthesis
+            else:
+                colored_formula.insert(tk.END, char, 'black')  # Use black as the default color if stack is empty
+        else:
+            if color_stack:
+                colored_formula.insert(tk.END, char, color_stack[-1])  # If there's a color in the stack, use it
+            else:
+                colored_formula.insert(tk.END, char)  # If stack is empty, insert without color
+
+    colored_formula.insert(tk.END, '\n')
+
+def refresh():
+    formula_entry.delete('1.0', tk.END)
+    colored_formula.delete('1.0', tk.END)
+
+root = tk.Tk()
+root.title("Color Parentheses")
+
+formula_entry = scrolledtext.ScrolledText(root, width=70, height=10)
+formula_entry.grid(row=0, column=0, sticky='nsew')
+
+colored_formula = scrolledtext.ScrolledText(root, width=70, height=10)
+colored_formula.grid(row=1, column=0, sticky='nsew')
+
+for color in colors:
+    colored_formula.tag_config(color, background=color)
+
+submit_button = tk.Button(root, text="Color Parentheses", command=color_parentheses)
+submit_button.grid(row=2, column=0)
+
+refresh_button = tk.Button(root, text="Refresh", command=refresh)
+refresh_button.grid(row=3, column=0)
+
+root.grid_rowconfigure(0, weight=1)
+root.grid_rowconfigure(1, weight=1)
+root.grid_columnconfigure(0, weight=1)
+
+root.mainloop()
